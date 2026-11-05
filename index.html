@@ -110,7 +110,7 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,9vw,44px);lin
 .maker label{display:block;margin-top:8px}
 .maker input{font:inherit;font-size:16px;color:var(--cream);background:rgba(255,241,214,.08);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0;flex:1 1 140px}
 .maker input:focus-visible{outline:2px solid var(--marigold);outline-offset:1px}
-.maker code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;color:var(--marigold);background:rgba(0,0,0,.25);padding:6px 10px;border-radius:8px;user-select:all}
+.maker code{overflow-wrap:anywhere;min-width:0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;color:var(--marigold);background:rgba(0,0,0,.25);padding:6px 10px;border-radius:8px;user-select:all}
 .maker p{margin:6px 0 0}
 
 @media (prefers-reduced-motion:reduce){
@@ -266,7 +266,7 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,9vw,44px);lin
       <code id="tag">#Name</code>
       <button class="btn ghost" id="copy" type="button">Copy</button>
     </div>
-    <p>Paste this at the very end of the link you send, so their name shows on the plate. Use a hyphen between words.</p>
+    <p>Type their name, tap Copy, and send the whole link as it is. Their name will show on the plate. Leave the name empty for a plain link.</p>
   </details>
 </div>
 
@@ -414,10 +414,13 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,9vw,44px);lin
 
   /* link maker */
   var who=$('#who'),tag=$('#tag');
+  function base(){return location.href.split('#')[0];}
+  function full(){var s=slug(who.value);return base()+(s?'#'+s:'');}
+  tag.textContent=full();
   function slug(v){return v.trim().replace(/[^\p{L}\p{N}]+/gu,'-').replace(/^-+|-+$/g,'');}
   who.addEventListener('input',function(){
     typed=who.value.trim();
-    var s=slug(who.value);tag.textContent='#'+(s||'Name');
+    tag.textContent=full();
     renderName();
   });
   $('#copy').addEventListener('click',function(){
