@@ -122,7 +122,7 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,9vw,44px);lin
   <svg class="lights" id="lights" viewBox="0 0 400 46" aria-hidden="true"></svg>
 
   <h1>A plate of faral</h1>
-  <p class="sub" id="sub">from <b>Vinaya</b>, for <b id="who-line">you</b></p>
+  <p class="sub" id="sub">from <b id="from-line">Vinaya</b>, for <b id="who-line">you</b></p>
 
   <section id="plate-view" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:14px">
     <div class="stage arriving" id="stage">
@@ -252,21 +252,25 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,9vw,44px);lin
     <h2 lang="mr">शुभ दीपावली</h2>
     <p class="big" id="final-name">Shubh Deepavali.</p>
     <p class="msg">May your year be full of light, good food, and people who pass you the plate first.</p>
-    <p class="sign">with love, Vinaya</p>
+    <p class="sign">with love, <span id="from-sign">Vinaya</span></p>
     <button class="btn ghost" id="again" type="button">Pass the plate again</button>
   </section>
 
   <details class="maker">
     <summary>Send one to someone else</summary>
-    <label for="who">Their name</label>
+    <label for="who">To (their name)</label>
     <div class="row">
       <input id="who" type="text" maxlength="24" placeholder="Aai" autocomplete="off">
+    </div>
+    <label for="from">From (your name, empty means Vinaya)</label>
+    <div class="row">
+      <input id="from" type="text" maxlength="24" placeholder="Vinaya" autocomplete="off">
     </div>
     <div class="row">
       <code id="tag">#Name</code>
       <button class="btn ghost" id="copy" type="button">Copy</button>
     </div>
-    <p>Type their name, tap Copy, and send the whole link as it is. Their name will show on the plate. Leave the name empty for a plain link.</p>
+    <p>Fill in who it is for and who it is from, tap Copy, and send the whole link as it is. Their name and yours will show on the plate. Leave both empty for a plain link.</p>
   </details>
 </div>
 
@@ -335,9 +339,10 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,9vw,44px);lin
   fs.innerHTML='<defs><radialGradient id="glowF"><stop offset="0" stop-color="#ffcf5a" stop-opacity=".85"/><stop offset="1" stop-color="#ffcf5a" stop-opacity="0"/></radialGradient><linearGradient id="clayF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cf5d30"/><stop offset="1" stop-color="#8c3217"/></linearGradient><radialGradient id="flameGF" cx="50%" cy="75%" r="65%"><stop offset="0" stop-color="#fff8cf"/><stop offset=".5" stop-color="#ffb62b"/><stop offset="1" stop-color="#f0641a"/></radialGradient></defs><g transform="translate(110,128) scale(2.3)" class="lit">'+diya('F')+'</g>';
 
   /* name */
-  function fromHash(){try{return decodeURIComponent(location.hash.replace(/^#/,'')).replace(/[-_+]+/g,' ').trim().slice(0,28);}catch(e){return '';}}
-  var hashName=fromHash(),typed='';
+  function parseHash(){var r='';try{r=decodeURIComponent(location.hash.replace(/^#/,''));}catch(e){}var p=r.split('_');function c(s){return (s||'').replace(/[-+]+/g,' ').trim().slice(0,28);}return {to:c(p[0]),from:c(p[1])};}
+  var hashName=parseHash().to,hashFrom=parseHash().from,typed='',typedFrom='';
   function name(){return typed||hashName;}
+  function sender(){return typedFrom||hashFrom||'Vinaya';}
   function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
   function addr(rest){var n=name();return n?n+', '+rest:cap(rest);}
 
@@ -353,6 +358,8 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,9vw,44px);lin
   function renderName(){
     var n=name();
     $('#who-line').textContent=n||'you';
+    $('#from-line').textContent=sender();
+    $('#from-sign').textContent=sender();
     $('#final-name').textContent=n?('Shubh Deepavali, '+n+'.'):'Shubh Deepavali.';
     if(current)showWish(current,false);
   }
@@ -413,23 +420,20 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,9vw,44px);lin
   });
 
   /* link maker */
-  var who=$('#who'),tag=$('#tag');
+  var who=$('#who'),frm=$('#from'),tag=$('#tag');
   function base(){return location.href.split('#')[0];}
-  function full(){var s=slug(who.value);return base()+(s?'#'+s:'');}
+  function full(){var t=slug(who.value),f=slug(frm.value);if(f.toLowerCase()==='vinaya')f='';return base()+((t||f)?'#'+t+(f?'_'+f:''):'');}
   tag.textContent=full();
   function slug(v){return v.trim().replace(/[^\p{L}\p{N}]+/gu,'-').replace(/^-+|-+$/g,'');}
-  who.addEventListener('input',function(){
-    typed=who.value.trim();
-    tag.textContent=full();
-    renderName();
-  });
+  function upd(){typed=who.value.trim();typedFrom=frm.value.trim();tag.textContent=full();renderName();}
+  who.addEventListener('input',upd);frm.addEventListener('input',upd);
   $('#copy').addEventListener('click',function(){
     var btn=$('#copy'),txt=tag.textContent;
     function done(m){btn.textContent=m;setTimeout(function(){btn.textContent='Copy';},1600);}
     function fallback(){var rg=document.createRange();rg.selectNodeContents(tag);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(rg);done('Selected');}
     try{navigator.clipboard.writeText(txt).then(function(){done('Copied');},fallback);}catch(e){fallback();}
   });
-  window.addEventListener('hashchange',function(){hashName=fromHash();renderName();});
+  window.addEventListener('hashchange',function(){var h=parseHash();hashName=h.to;hashFrom=h.from;renderName();});
 
   renderName();
 })();
